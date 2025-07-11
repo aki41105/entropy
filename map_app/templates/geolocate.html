@@ -20,7 +20,7 @@
                                 latitude: position.coords.latitude,
                                 longitude: position.coords.longitude
                             };
-                            resolve({ locationData });
+                            resolve(locationData);
                         },
                         (error) => {
                             reject("位置情報の取得に失敗しました: " + error.message);
@@ -41,7 +41,7 @@
             const url = "/api/json_geolocate/";
 
             try {
-                const { locationData } = await getCurrentLocation();
+                const locationData = await getCurrentLocation();
                 console.log(`緯度: ${locationData.latitude}, 経度: ${locationData.longitude}`);
 
                 const response = await fetch(url, {
@@ -53,19 +53,20 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error("ネットワークエラー: " + response.statusText);
+                    throw new Error("送信に失敗しました: " + response.statusText);
                 }
 
-                const data = await response.json();
-                console.log("サーバーからの応答:", data);
+                const result = await response.json();
+                console.log("サーバーからの応答:", result);
+
+                window.location.href = "get/your/html/page"; // ← Flaskでこのルートを定義しておく
             } catch (error) {
                 console.error(error);
+                alert("位置情報の送信に失敗しました。");
             }
         }
 
-        sendCurrentLocation();
-
-        window.location.href = 'get/your/html/page'; // ここにリダイレクト先のURLを指定
+        window.addEventListener("load", sendCurrentLocation);
     </script>
 </body>
 
