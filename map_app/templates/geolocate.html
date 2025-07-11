@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>現在地自動送信</title>
+</head>
+
+<body>
+    <h1>現在地を取得して送信中</h1>
+
+    <script>
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const locationData = {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            };
+                            resolve({ locationData });
+                        },
+                        (error) => {
+                            reject("位置情報の取得に失敗しました: " + error.message);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 5000,
+                            maximumAge: 0
+                        }
+                    );
+                } else {
+                    reject("このブラウザではGeolocationがサポートされていません。");
+                }
+            });
+        }
+
+        async function sendCurrentLocation() {
+            const url = "/api/json_geolocate/";
+
+            try {
+                const { locationData } = await getCurrentLocation();
+                console.log(`緯度: ${locationData.latitude}, 経度: ${locationData.longitude}`);
+
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(locationData)
+                });
+
+                if (!response.ok) {
+                    throw new Error("ネットワークエラー: " + response.statusText);
+                }
+
+                const data = await response.json();
+                console.log("サーバーからの応答:", data);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        sendCurrentLocation();
+
+        window.location.href = 'get/your/html/page'; // ここにリダイレクト先のURLを指定
+    </script>
+</body>
+
+</html>
