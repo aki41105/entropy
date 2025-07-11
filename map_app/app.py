@@ -34,6 +34,8 @@ def json_geolocate():
     # JSONとして保存
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+        
+    # ここで map 作成の関数を呼ぶ
     
     # レスポンスを返す
     return jsonify({'status': 'ok', 'received': {'latitude': latitude, 'longitude': longitude}})
