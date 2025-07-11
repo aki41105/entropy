@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>現在地を地図に表示（Google Mapsなし）</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>現在地をOpenStreetMapに表示</h1>
+  <button onclick="getLocation()">現在地を取得して表示</button>
+  <p id="status">まだ取得していません</p>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let map, marker;
+
+    function getLocation() {
+      const status = document.getElementById("status");
+
+      if (!navigator.geolocation) {
+        status.textContent = "このブラウザではGeolocation APIが使えません。";
+        return;
+      }
+
+      status.textContent = "現在地を取得中...";
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          status.textContent = `緯度: ${lat}, 経度: ${lng}`;
+
+          const currentLocation = [lat, lng];
+
+          // すでにマップがある場合は更新
+          if (!map) {
+            map = L.map('map').setView(currentLocation, 15);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+          } else {
+            map.setView(currentLocation, 15);
+          }
+
+          // マーカーを表示または更新
+          if (marker) {
+            marker.setLatLng(currentLocation);
+          } else {
+            marker = L.marker(currentLocation).addTo(map)
+              .bindPopup("現在地")
+              .openPopup();
+          }
+        },
+        (error) => {
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              status.textContent = "位置情報の取得が許可されていません。";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              status.textContent = "位置情報が利用できません。";
+              break;
+            case error.TIMEOUT:
+              status.textContent = "タイムアウトしました。";
+              break;
+            default:
+              status.textContent = "不明なエラーが発生しました。";
+              break;
+          }
+        }
+      );
+    }
+  </script>
+</body>
+</html>
