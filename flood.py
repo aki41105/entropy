@@ -78,24 +78,31 @@ route_coords = [(G_safe.nodes[n]['y'], G_safe.nodes[n]['x']) for n in safe_route
 
 # 地図に描画
 fmap = folium.Map(location=current_location, zoom_start=14)
-folium.Marker(location=current_location, popup="現在地", icon=folium.Icon(color="green")).add_to(fmap)
-folium.Marker(location=nearest_location, popup="避難所", icon=folium.Icon(color="red")).add_to(fmap)
-folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.7).add_to(fmap)
 
 # foliumに渡すためにGeoJSON形式に変換
 geojson_data = hazard_gdf.to_json()
 
-# 危険区域ポリゴンを地図に追加
+
+# マーカーやルートなど追加
+folium.Marker(location=current_location, popup="現在地", icon=folium.Icon(color="green")).add_to(fmap)
+folium.Marker(location=nearest_location, popup="避難所", icon=folium.Icon(color="red")).add_to(fmap)
+folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.7).add_to(fmap)
+
+# 危険区域ポリゴン（波線などを追加）
 folium.GeoJson(
     data=geojson_data,
-    name="洪水浸水想定区域（ベクター）",
+    name="洪水浸水想定区域",
     style_function=lambda feature: {
-        'fillColor': 'blue',
-        'color': 'blue',
-        'weight': 1,
-        'fillOpacity': 0.4,
+        'fillColor': '#99ccff',
+        'color': '#3366cc',
+        'weight': 1.5,
+        'fillOpacity': 0.6,
+        'dashArray': '5, 5'
     }
 ).add_to(fmap)
+
+# レイヤー切り替えUIを追加
+folium.LayerControl().add_to(fmap)
 
 # HTML形式で保存
 fmap.save("safe_route_with_flood.html")
