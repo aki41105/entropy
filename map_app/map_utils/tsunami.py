@@ -8,7 +8,13 @@ def main():
     import pandas as pd
     from folium.features import CustomIcon
 
+
     radius_km = 5.0  # 半径を5.0kmに設定 (必要に応じて変更)
+
+    # ダウンロード・解凍済みの S H P ファイルを指定(洪水浸水想定区域データ)
+    tsunami_gdf = gpd.read_file("data/tsunami/A40-17_17.shp")  # 津波浸水想定データ
+
+
 
     # ダウンロード・解凍済みの S H P ファイルを指定(津波浸水想定データ)
     tsunami_gdf = gpd.read_file("../data/tsunami/A40-17_17.shp")  # 津波浸水想定データ
@@ -16,7 +22,7 @@ def main():
     hazard_gdf = tsunami_gdf.to_crs(epsg=4326)
 
     # 避難所データの読み込み（UTF-8-SIG で正しく読み込む）
-    file_path = "../data/shelter.csv"  # 適宜ファイルパスを変更
+    file_path = "data/shelter.csv"  # 適宜ファイルパスを変更
     df = pd.read_csv(file_path, encoding="utf-8-sig")
 
     # 現在地の設定
@@ -32,16 +38,16 @@ def main():
 
     # カスタムアイコンの設定
     icon_start = CustomIcon(
-        icon_image = './start.png',
-        icon_size = (55, 65),
-        icon_anchor = (30, 30),
-        popup_anchor = (3, 3)
+    icon_image = 'map_utils/start.png'
+    ,icon_size = (55, 65)
+    ,icon_anchor = (30, 30)
+    ,popup_anchor = (3, 3)
     )
     icon_goal = CustomIcon(
-        icon_image = './goal.png',
-        icon_size = (55, 65),
-        icon_anchor = (30, 30),
-        popup_anchor = (3, 3)
+    icon_image = 'map_utils/goal.png'
+    ,icon_size = (55, 65)
+    ,icon_anchor = (30, 30)
+    ,popup_anchor = (3, 3)
     )
 
     # foliumに渡すためにGeoJSON形式に変換
@@ -58,6 +64,7 @@ def main():
             'fillOpacity': 0.4,
         }
     ).add_to(fmap)
+
 
     # 現在地マーカーを地図に追加（危険区域内か外かでポップアップ内容を変更するため、ここではアイコンのみ設定）
     folium.Marker(location=current_location, icon=folium.Icon(color="red", icon="info-sign")).add_to(fmap)
@@ -348,6 +355,19 @@ def main():
     fmap.save("../templates/safe_route_with_tsunami.html") # HTMLファイル名をtsunami版に
     print("✅ 地図を保存しました：safe_route_with_tsunami.html")
 
+    import os
+
+    # 保存先の絶対パスを指定（static/maps/ に保存）
+    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static', 'maps'))
+    os.makedirs(output_dir, exist_ok=True)
+
+    absolute_path = os.path.join(output_dir, "safe_route_with_tsunami.html")
+
+    # 保存
+    fmap.save(absolute_path)
+    print(f"✅ 地図を保存しました：{absolute_path}")
 
 if __name__ == "__main__":
+
     main()
+

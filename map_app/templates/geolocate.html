@@ -1,73 +1,122 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>現在地自動送信</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>災害カテゴリの送信（デバッグ強化版）</title>
+  <style>
+    #log {
+      white-space: pre-wrap;
+      font-size: 0.9em;
+      color: #333;
+      background: #f4f4f4;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+  </style>
 </head>
-
 <body>
-    <h1>現在地を取得して送信中</h1>
+  <h1>災害カテゴリを選んで現在地を送信</h1>
 
-    <script>
-        function getCurrentLocation() {
-            return new Promise((resolve, reject) => {
-                if ("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const locationData = {
-                                latitude: position.coords.latitude,
-                                longitude: position.coords.longitude
-                            };
-                            resolve(locationData);
-                        },
-                        (error) => {
-                            reject("位置情報の取得に失敗しました: " + error.message);
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            timeout: 5000,
-                            maximumAge: 0
-                        }
-                    );
-                } else {
-                    reject("このブラウザではGeolocationがサポートされていません。");
-                }
-            });
+  <button id="btn-dosya">土砂災害</button>
+  <button id="btn-flood">洪水</button>
+  <button id="btn-tsunami">津波</button>
+
+  <div id="locationDisplay" style="margin-top: 20px; font-weight: bold;">
+    位置情報：未取得
+  </div>
+
+  <div id="log"><strong>デバッグログ:</strong></div>
+
+  <script>
+    const logArea = document.getElementById("log");
+
+    function log(message, data = null) {
+      const timestamp = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+      const fullMsg = `[${timestamp}] ${message}`;
+      console.log(fullMsg, data ?? '');
+      logArea.textContent += `\n${fullMsg}` + (data ? `\n${JSON.stringify(data, null, 2)}\n` : '');
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      log("✅ ページ読み込み完了（DOM fully loaded）");
+      document.getElementById("btn-dosya").addEventListener("click", () => sendWithCategory("dosya"));
+      document.getElementById("btn-flood").addEventListener("click", () => sendWithCategory("flood"));
+      document.getElementById("btn-tsunami").addEventListener("click", () => sendWithCategory("tsunami"));
+    });
+
+    async function getCurrentLocation() {
+      log("📍 現在地取得開始");
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          const msg = "⚠️ Geolocationがサポートされていません";
+          log(msg);
+          reject(msg);
+        } else {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const coords = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              };
+              log("✅ 現在地取得成功", coords);
+              document.getElementById("locationDisplay").textContent =
+                `位置情報：緯度 ${coords.latitude.toFixed(5)}, 経度 ${coords.longitude.toFixed(5)}`;
+              resolve(coords);
+            },
+            (error) => {
+              const errMsg = `❌ 位置情報取得失敗: ${error.message}`;
+              log(errMsg);
+              reject(errMsg);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+        }
+      });
+    }
+
+    async function sendWithCategory(category) {
+      log(`🚨 ボタンが押されました: ${category}`);
+      const url = "/api/json_geolocate/";
+
+      try {
+        const location = await getCurrentLocation();
+        const payload = { ...location, category };
+
+        log("📤 サーバーへ送信するデータ:", payload);
+        console.table(payload);
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        log(`📥 HTTPステータス: ${response.status} ${response.statusText}`);
+        if (!response.ok) {
+          throw new Error(`サーバー応答エラー: ${response.statusText}`);
         }
 
-        async function sendCurrentLocation() {
-            const url = "/api/json_geolocate/";
+        const json = await response.json();
+        log("📥 サーバーからのJSON応答", json);
 
-            try {
-                const locationData = await getCurrentLocation();
-                console.log(`緯度: ${locationData.latitude}, 経度: ${locationData.longitude}`);
-
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(locationData)
-                });
-
-                if (!response.ok) {
-                    throw new Error("送信に失敗しました: " + response.statusText);
-                }
-
-                const result = await response.json();
-                console.log("サーバーからの応答:", result);
-
-                window.location.href = "get/your/html/page"; // ← Flaskでこのルートを定義しておく
-            } catch (error) {
-                console.error(error);
-                alert("位置情報の送信に失敗しました。");
-            }
+        if (json.status === "ok" && json.map) {
+          log("✅ 地図URLを受信 → 新しいタブで開きます", json.map);
+          window.open(json.map, "_self");
+        } else {
+          log("⚠️ 地図URLが見つかりません", json);
+          alert("エラー: 応答に地図URLが含まれていません");
         }
-
-        window.addEventListener("load", sendCurrentLocation);
-    </script>
+      } catch (err) {
+        log("❌ 通信または処理中にエラーが発生", err.message);
+        alert("送信失敗: 詳細はデバッグログをご確認ください");
+      } finally {
+        log("🔚 --- 処理終了 ---\n");
+      }
+    }
+  </script>
 </body>
-
 </html>

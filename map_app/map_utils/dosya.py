@@ -7,8 +7,11 @@ def main():
     from shapely.geometry import Point
     import pandas as pd
     from folium.features import CustomIcon
+    import os
+
 
     radius_km = 5.0  # 半径を5.0kmに設定 (ご要望に合わせて変更)
+
 
     # ダウンロード・解凍済みの S H P ファイルを指定(土砂災害想定区域データ)
     landslide_gdf = gpd.read_file("../data/dosha/A33-18_17Polygon.shp")  #土砂災害想定区域データ
@@ -16,7 +19,7 @@ def main():
     hazard_gdf = landslide_gdf.to_crs(epsg=4326)
 
     # 避難所データの読み込み（UTF-8-SIG で正しく読み込む）
-    file_path = "../data/shelter.csv"  # 適宜ファイルパスを変更
+    file_path = "data/shelter.csv"  # 適宜ファイルパスを変更
     df = pd.read_csv(file_path, encoding="utf-8-sig")
 
     # 現在地の設定
@@ -32,16 +35,17 @@ def main():
 
     # カスタムアイコンの設定
     icon_start = CustomIcon(
-        icon_image = './start.png',
-        icon_size = (55, 65),
-        icon_anchor = (30, 30),
-        popup_anchor = (3, 3)
+
+        icon_image = 'map_utils/start.png'
+        ,icon_size = (55, 65)
+        ,icon_anchor = (30, 30)
+        ,popup_anchor = (3, 3)
     )
     icon_goal = CustomIcon(
-        icon_image = './goal.png',
-        icon_size = (55, 65),
-        icon_anchor = (30, 30),
-        popup_anchor = (3, 3)
+        icon_image = 'map_utils/goal.png'
+        ,icon_size = (55, 65)
+        ,icon_anchor = (30, 30)
+        ,popup_anchor = (3, 3)
     )
 
     # foliumに渡すためにGeoJSON形式に変換
@@ -349,6 +353,16 @@ def main():
     fmap.save("../templates/safe_route_with_dosya.html")
     print("✅ 地図を保存しました：safe_route_with_dosya.html")
 
+    # 保存先の絶対パスを指定（static/maps/ に保存）
+    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static', 'maps'))
+    os.makedirs(output_dir, exist_ok=True)
+
+
+    absolute_path = os.path.join(output_dir, "safe_route_with_dosya.html")
+
+    # 保存
+    fmap.save(absolute_path)
+    print(f"✅ 地図を保存しました：{absolute_path}")
 
 if __name__ == "__main__":
     main()
