@@ -52,8 +52,8 @@ def main():
         data=geojson_data,
         name="津波浸水想定区域",
         style_function=lambda feature: {
-            'fillColor': 'blue',
-            'color': 'blue',
+            'fillColor': '#66ccff',
+            'color': '#0099cc',
             'weight': 1,
             'fillOpacity': 0.4,
         }

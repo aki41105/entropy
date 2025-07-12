@@ -52,7 +52,8 @@ def main():
         data=geojson_data,
         name="土砂災害想定区域",
         style_function=lambda feature: {
-            'fillColor': 'blue',
+            'fillColor': '#cc9966',
+            'fillColor': '#cc3300',
             'color': 'blue',
             'weight': 1,
             'fillOpacity': 0.4,
