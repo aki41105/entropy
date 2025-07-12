@@ -67,8 +67,13 @@ def main():
     ,popup_anchor = (3, 3)
     )
     icon_goal = CustomIcon(
+<<<<<<< HEAD
     icon_image = 'map_utils/goal.png'
     ,icon_size = (20, 30)
+=======
+    icon_image = './goal.png'
+    ,icon_size = (55, 65)
+>>>>>>> 9a9032e1f9fd7d3924cb46a5b158dd4130af7cd7
     ,icon_anchor = (30, 30)
     ,popup_anchor = (3, 3)
     )

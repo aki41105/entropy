@@ -5,8 +5,9 @@ import networkx as nx
 import folium
 from shapely.geometry import Point
 import pandas as pd
+import json
 
-# ダウンロード・解凍済みの S H P ファイルを指定(洪水浸水想定区域データ)
+# ダウンロード・解凍済みの S H P ファイルを指定(津波浸水想定区域データ)
 tsunami_gdf = gpd.read_file("tsunami/A40-17_17.shp")  # 津波浸水想定データ
 
 
@@ -17,19 +18,37 @@ hazard_gdf = tsunami_gdf.to_crs(epsg=4326)
 file_path = "170003_evacuation_space.csv"  # 適宜ファイルパスを変更
 df = pd.read_csv(file_path, encoding="utf-8-sig")
 
-# 現在地の設定
-current_location = [36.599901, 136.677889]
-print('現在地の設定')
+# JSONファイルから現在地を読み込む
+with open("map_app/data/geolocate.json", "r", encoding="utf-8") as f:
+    geo_data = json.load(f)
+    current_location = [geo_data["latitude"], geo_data["longitude"]]
 
+# 「災害種別_津波」列を 1 or 0 の整数に変換（それ以外はNaNに）
+df["災害種別_津波"] = pd.to_numeric(df["災害種別_津波"], errors="coerce")
 
-# 緯度・経度が存在する避難所から最も近いものを選定
-valid_shelters = df.dropna(subset=["緯度", "経度"]).copy()
+# 1または0のみ残す（文字列や"－"は除外）
+df = df[df["災害種別_津波"].isin([0, 1])]
+
+# 災害種別の指定
+valid_shelters = df[
+    (df["災害種別_津波"] == 1) & df["緯度"].notna() & df["経度"].notna()
+].copy()
+
+# 現在地からの距離計算
 valid_shelters["距離(km)"] = valid_shelters.apply(
     lambda row: geodesic(current_location, (row["緯度"], row["経度"])).km, axis=1
 )
 
+# 安全な避難所だけに限定（危険区域と重なっていないもの）
+shelter_points = gpd.GeoDataFrame(
+    valid_shelters,
+    geometry=gpd.points_from_xy(valid_shelters["経度"], valid_shelters["緯度"]),
+    crs="EPSG:4326"
+)
+safe_shelters = gpd.sjoin(shelter_points, hazard_gdf, how="left", predicate="intersects")
+safe_shelters = safe_shelters[safe_shelters["index_right"].isna()]  # 洪水域に入ってない
 
-# 安全な避難所だけに限定（洪水域と重なっていないもの）
+# 安全な避難所だけに限定（危険区域と重なっていないもの）
 shelter_points = gpd.GeoDataFrame(
     valid_shelters,
     geometry=gpd.points_from_xy(valid_shelters["経度"], valid_shelters["緯度"]),
@@ -47,8 +66,7 @@ G = ox.graph_from_point(current_location, dist=2000, network_type='walk')
 nodes = [(n, Point(d['x'], d['y'])) for n, d in G.nodes(data=True)]
 node_gdf = gpd.GeoDataFrame(nodes, columns=["node", "geometry"], crs="EPSG:4326")
 
-
-# ノードと洪水ポリゴンの空間結合（交差するノードを特定）
+# ノードと危険区域ポリゴンの空間結合（交差するノードを特定）
 hazard_nodes = gpd.sjoin(node_gdf, hazard_gdf, how='inner', predicate='intersects')
 
 # 危険なノードIDのリストを作成
@@ -78,7 +96,7 @@ folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.7).add_to(fmap)
 # foliumに渡すためにGeoJSON形式に変換
 geojson_data = hazard_gdf.to_json()
 
-# 洪水ポリゴンを地図に追加
+# 危険区域ポリゴンを地図に追加
 folium.GeoJson(
     data=geojson_data,
     name="津波浸水想定区域",
