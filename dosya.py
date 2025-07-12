@@ -86,8 +86,8 @@ folium.GeoJson(
     data=geojson_data,
     name="土砂災害想定区域",
     style_function=lambda feature: {
-        'fillColor': 'blue',
-        'color': 'blue',
+        'fillColor': '#cc9966',
+        'color': '#cc3300',
         'weight': 1,
         'fillOpacity': 0.4,
     }

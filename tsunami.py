@@ -101,10 +101,11 @@ folium.GeoJson(
     data=geojson_data,
     name="津波浸水想定区域",
     style_function=lambda feature: {
-        'fillColor': 'blue',
-        'color': 'blue',
-        'weight': 1,
-        'fillOpacity': 0.4,
+        'fillColor': '#66ccff',
+        'color': '#0099cc',
+        'weight': 1.5,
+        'fillOpacity': 0.6,
+        'dashArray': '5, 5'
     }
 ).add_to(fmap)
 
