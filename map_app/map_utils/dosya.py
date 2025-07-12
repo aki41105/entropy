@@ -7,13 +7,13 @@ from shapely.geometry import Point
 import pandas as pd
 
 # ダウンロード・解凍済みの S H P ファイルを指定(洪水浸水想定区域データ)
-landslide_gdf = gpd.read_file("dosha/A33-18_17Polygon.shp")  #土砂災害想定区域データ
+landslide_gdf = gpd.read_file("../data/dosha/A33-18_17Polygon.shp")  #土砂災害想定区域データ
 
 # WGS84 緯度経度 (EPSG:4326) に変換
 hazard_gdf = landslide_gdf.to_crs(epsg=4326)
 
 # 避難所データの読み込み（UTF-8-SIG で正しく読み込む）
-file_path = "17000_1.csv"  # 適宜ファイルパスを変更
+file_path = "../data/shelter.csv"  # 適宜ファイルパスを変更
 df = pd.read_csv(file_path, encoding="utf-8-sig")
 
 # 現在地の設定
@@ -76,5 +76,5 @@ folium.GeoJson(
 ).add_to(fmap)
 
 # HTML形式で保存
-fmap.save("safe_route_with_dosya.html")
+fmap.save("../templates/safe_route_with_dosya.html")
 print("✅ 地図を保存しました：safe_route_with_dosya.html")
