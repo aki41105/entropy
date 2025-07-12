@@ -1,1 +1,8 @@
-flask
+Flask
+geopandas
+geopy          
+osmnx
+networkx
+folium
+pandas
+shapely        
