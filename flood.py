@@ -14,7 +14,7 @@ hazard_gdf = flood_gdf.to_crs(epsg=4326)
 # import ipdb ;ipdb.set_trace()
 
 # 避難所データの読み込み（UTF-8-SIG で正しく読み込む）
-file_path = "17000_1.csv"  # 適宜ファイルパスを変更
+file_path = "170003_evacuation_space.csv"  # 適宜ファイルパスを変更
 df = pd.read_csv(file_path, encoding="utf-8-sig")
 
 # 現在地の設定

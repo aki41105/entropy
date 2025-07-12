@@ -13,7 +13,7 @@ landslide_gdf = gpd.read_file("dosha/A33-18_17Polygon.shp")  #土砂災害想定
 hazard_gdf = landslide_gdf.to_crs(epsg=4326)
 
 # 避難所データの読み込み（UTF-8-SIG で正しく読み込む）
-file_path = "17000_1.csv"  # 適宜ファイルパスを変更
+file_path = "170003_evacuation_space.csv"  # 適宜ファイルパスを変更
 df = pd.read_csv(file_path, encoding="utf-8-sig")
 
 # 現在地の設定
