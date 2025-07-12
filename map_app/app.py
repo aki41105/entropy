@@ -1,8 +1,8 @@
+from flask import Flask, render_template, request, jsonify, url_for
 import json
 import os
 import traceback
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, url_for
 
 # 災害別の地図生成モジュール
 from map_utils.dosya import main as dosya
@@ -18,22 +18,26 @@ def log(msg):
 @app.route('/getGeolocate')
 def getGeolocate():
     log("🔄 /getGeolocate にアクセスされました。")
-    return render_template('geolocate.html')
+
+    # ボタン用画像URLをテンプレートに渡す
+    return render_template('geolocate.html',
+        icon_dosya=url_for('static', filename='images/shizensaigai_dosyakuzure.png'),
+        icon_flood=url_for('static', filename='images/suigai_teibou_kekkai.png'),
+        icon_tsunami=url_for('static', filename='images/tsunami.png')
+    )
 
 @app.route('/api/json_geolocate/', methods=['POST'])
 def json_geolocate():
     log("🚨 POSTリクエスト受信：/api/json_geolocate/")
 
-    # JSON取得
     try:
         data = request.get_json(force=True)
         log(f"📥 JSONデータ取得成功: {json.dumps(data, indent=2, ensure_ascii=False)}")
-    except Exception as e:
+    except Exception:
         log("❌ JSON取得失敗:")
         traceback.print_exc()
         return jsonify({'error': 'Invalid JSON format'}), 400
 
-    # バリデーション
     if not data:
         log("❗ JSONが空です")
         return jsonify({'error': 'No JSON data received'}), 400
@@ -49,7 +53,6 @@ def json_geolocate():
     log(f"🛰 緯度: {latitude}, 経度: {longitude}")
     log(f"📌 災害カテゴリ: {category}")
 
-    # JSON保存処理
     try:
         os.makedirs('data', exist_ok=True)
         save_path = os.path.join('data', 'geolocate.json')
@@ -61,7 +64,6 @@ def json_geolocate():
         traceback.print_exc()
         return jsonify({'error': 'Failed to save JSON'}), 500
 
-    # 地図生成
     try:
         if category == 'flood':
             log("🛠 洪水マップ生成開始")
@@ -83,7 +85,6 @@ def json_geolocate():
         traceback.print_exc()
         return jsonify({'status': 'error', 'message': 'map generation failed'}), 500
 
-    # ファイル存在確認
     map_path = os.path.join(app.static_folder, 'maps', map_file)
     if not os.path.exists(map_path):
         log(f"❌ 生成された地図ファイルが存在しません: {map_path}")
@@ -91,7 +92,6 @@ def json_geolocate():
     else:
         log(f"✅ 地図ファイルの存在確認済み: {map_path}")
 
-    # URL生成
     try:
         map_url = url_for('static', filename=f'maps/{map_file}', _external=True)
         log(f"✅ 地図URL生成成功: {map_url}")
