@@ -346,10 +346,7 @@ def main():
                 icon=folium.Icon(color=marker_color, icon="home")
             ).add_to(fmap)
 
-    # HTML形式で保存
-    fmap.save("../templates/safe_route_with_flood.html")
-    print("✅ 地図を保存しました：safe_route_with_flood.html")
-
+    
     import os
 
     # 保存先の絶対パスを指定（static/maps/ に保存）

@@ -17,7 +17,7 @@ def main():
 
 
     # ダウンロード・解凍済みの S H P ファイルを指定(津波浸水想定データ)
-    tsunami_gdf = gpd.read_file("../data/tsunami/A40-17_17.shp")  # 津波浸水想定データ
+    tsunami_gdf = gpd.read_file("data/tsunami/A40-17_17.shp")  # 津波浸水想定データ
     # WGS84 緯度経度 (EPSG:4326) に変換
     hazard_gdf = tsunami_gdf.to_crs(epsg=4326)
 
@@ -351,9 +351,7 @@ def main():
                 icon=folium.Icon(color=marker_color, icon="home")
             ).add_to(fmap)
 
-    # HTML形式で保存
-    fmap.save("../templates/safe_route_with_tsunami.html") # HTMLファイル名をtsunami版に
-    print("✅ 地図を保存しました：safe_route_with_tsunami.html")
+    
 
     import os
 
