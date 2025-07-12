@@ -68,7 +68,7 @@ def main():
     )
     icon_goal = CustomIcon(
     icon_image = './goal.png'
-    ,icon_size = (20, 30)
+    ,icon_size = (55, 65)
     ,icon_anchor = (30, 30)
     ,popup_anchor = (3, 3)
     )
