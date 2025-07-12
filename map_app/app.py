@@ -2,6 +2,9 @@ import json
 import os
 
 from flask import Flask, render_template, request, jsonify
+from map_utils.dosya import main as dosya
+from map_utils.flood import main as flood
+from map_utils.tsunami import main as tsunami
 
 app = Flask(__name__)
 
