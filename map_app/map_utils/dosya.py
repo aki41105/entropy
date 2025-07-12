@@ -73,7 +73,7 @@ def main():
 
     folium.Marker(location=current_location, popup="現在地", icon=folium.Icon(color="red", icon="info-sign")).add_to(fmap)
     folium.Marker(location=nearest_location, popup="避難所", icon=icon_goal).add_to(fmap)
-    folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.7).add_to(fmap)
+    folium.PolyLine(route_coords, color="red", weight=5, opacity=0.7).add_to(fmap)
 
     # foliumに渡すためにGeoJSON形式に変換
     geojson_data = hazard_gdf.to_json()
