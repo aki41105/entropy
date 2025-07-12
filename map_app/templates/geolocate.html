@@ -1,73 +1,89 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>現在地自動送信</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>災害カテゴリの送信</title>
 </head>
-
 <body>
-    <h1>現在地を取得して送信中</h1>
+  <h1>災害カテゴリを選んで現在地を送信</h1>
 
-    <script>
-        function getCurrentLocation() {
-            return new Promise((resolve, reject) => {
-                if ("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const locationData = {
-                                latitude: position.coords.latitude,
-                                longitude: position.coords.longitude
-                            };
-                            resolve(locationData);
-                        },
-                        (error) => {
-                            reject("位置情報の取得に失敗しました: " + error.message);
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            timeout: 5000,
-                            maximumAge: 0
-                        }
-                    );
-                } else {
-                    reject("このブラウザではGeolocationがサポートされていません。");
-                }
-            });
-        }
+  <!-- ボタン3つ -->
+  <button onclick="sendWithCategory('dosha')">土砂災害</button>
+  <button onclick="sendWithCategory('flood')">洪水</button>
+  <button onclick="sendWithCategory('tsunami')">津波</button>
 
-        async function sendCurrentLocation() {
-            const url = "/api/json_geolocate/";
+  <!-- 位置情報の表示エリア -->
+  <div id="locationDisplay" style="margin-top: 20px; font-weight: bold;">
+    位置情報：未取得
+  </div>
 
-            try {
-                const locationData = await getCurrentLocation();
-                console.log(`緯度: ${locationData.latitude}, 経度: ${locationData.longitude}`);
+  <script>
+    // 位置情報を取得する関数（Promiseでラップ）
+    function getCurrentLocation() {
+      return new Promise((resolve, reject) => {
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const locationData = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              };
 
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(locationData)
-                });
+              // 📍 画面に表示（小数点5桁まで表示）
+              document.getElementById("locationDisplay").textContent =
+                `位置情報：緯度 ${locationData.latitude.toFixed(5)}, 経度 ${locationData.longitude.toFixed(5)}`;
 
-                if (!response.ok) {
-                    throw new Error("送信に失敗しました: " + response.statusText);
-                }
-
-                const result = await response.json();
-                console.log("サーバーからの応答:", result);
-
-                window.location.href = "get/your/html/page"; // ← Flaskでこのルートを定義しておく
-            } catch (error) {
-                console.error(error);
-                alert("位置情報の送信に失敗しました。");
+              resolve(locationData);
+            },
+            (error) => {
+              reject("位置情報の取得に失敗: " + error.message);
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0
             }
+          );
+        } else {
+          reject("このブラウザではGeolocationがサポートされていません。");
+        }
+      });
+    }
+
+    // ボタン押下時にカテゴリと現在地を送信
+    async function sendWithCategory(category) {
+      const url = "/api/json_geolocate/"; 
+
+      try {
+        const locationData = await getCurrentLocation();
+
+        const data = {
+          ...locationData,
+          category: category
+        };
+
+        console.log("送信データ:", data);
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          throw new Error("送信に失敗しました: " + response.statusText);
         }
 
-        window.addEventListener("load", sendCurrentLocation);
-    </script>
+        const result = await response.json();
+        alert("送信完了！サーバー応答：" + JSON.stringify(result));
+      } catch (error) {
+        console.error(error);
+        alert("送信に失敗しました。");
+      }
+    }
+  </script>
 </body>
-
 </html>
