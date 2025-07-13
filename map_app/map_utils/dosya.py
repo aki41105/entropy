@@ -8,9 +8,9 @@ def main():
     import pandas as pd
     from folium.features import CustomIcon
     import os
+    import json
 
-
-    radius_km = 5.0  # 半径を5.0kmに設定 (ご要望に合わせて変更)
+    radius_km = 2.0  # 半径を5.0kmに設定 (ご要望に合わせて変更)
 
 
     # ダウンロード・解凍済みの S H P ファイルを指定(土砂災害想定区域データ)
@@ -22,9 +22,12 @@ def main():
     file_path = "data/shelter.csv"  # 適宜ファイルパスを変更
     df = pd.read_csv(file_path, encoding="utf-8-sig")
 
-    # 現在地の設定
-    print("現在地の設定")
-    current_location = [36.599901, 136.677889] # [緯度, 経度]
+    # JSONファイルから現在地を読み込む
+    with open("data/geolocate.json", "r", encoding="utf-8") as f:
+        geo_data = json.load(f)
+        current_location = [geo_data["latitude"], geo_data["longitude"]]
+
+    print("✅ 現在地をgeojsonから取得しました：", current_location)
 
     # 現在地が危険区域内にあるかどうかの判定
     current_point = Point(current_location[1], current_location[0]) # Point(経度, 緯度)
@@ -65,7 +68,7 @@ def main():
     ).add_to(fmap)
 
     # 現在地マーカーを地図に追加（危険区域内か外かでポップアップ内容を変更するため、ここではアイコンのみ設定）
-    folium.Marker(location=current_location, icon=folium.Icon(color="red", icon="info-sign")).add_to(fmap)
+    folium.Marker(location=current_location, icon=icon_start).add_to(fmap)
 
 
     # 現在地が危険区域内かどうかに応じて処理を分岐
@@ -95,7 +98,7 @@ def main():
             print(f"⚠️ 半径 {radius_km}km 以内に有効な避難所が見つかりませんでした。")
             # この場合、経路探索は行わない
             print("\n--- 最適な避難経路が見つかりませんでした。 ---")
-            folium.Marker(location=current_location, popup="現在地: 危険区域内（経路なし）", icon=folium.Icon(color="red", icon="info-sign")).add_to(fmap)
+            folium.Marker(location=current_location, popup="現在地: 危険区域内（経路なし）", icon=icon_start).add_to(fmap)
             fmap.save("../templates/safe_route_with_dosya.html")
             print("✅ 地図を保存しました：safe_route_with_dosya.html")
             return # ここで処理を終了
@@ -209,7 +212,7 @@ def main():
                     try:
                         best_route = nx.astar_path(G_weighted, orig_node_weighted, dest_node_weighted, weight='length')
                         best_shelter_location = nearest_location
-                        route_color = "orange"
+                        route_color = "red"
                         route_tooltip = "最短（一部危険区域通過）避難経路"
                         print(f"  ✅ フェーズ2a: ペナルティ付き最短経路を危険区域外の避難所 {nearest_shelter_df.get('名称', '名称不明')} へ表示します。")
                     except nx.NetworkXNoPath:
@@ -238,7 +241,7 @@ def main():
                         try:
                             best_route = nx.astar_path(G_weighted, orig_node_weighted, dest_node_weighted, weight='length')
                             best_shelter_location = nearest_location
-                            route_color = "orange"
+                            route_color = "red"
                             route_tooltip = "最短（一部危険区域通過）避難経路"
                             print(f"  ✅ フェーズ2b: ペナルティ付き最短経路を危険区域内の避難所 {nearest_shelter_df.get('名称', '名称不明')} へ表示します。")
                         except nx.NetworkXNoPath:
@@ -258,7 +261,7 @@ def main():
             folium.Marker(location=best_shelter_location, popup=f"メイン避難所: {final_shelter_info.get('名称', '名称不明')}", icon=icon_goal).add_to(fmap)
         else:
             print("\n--- 最適な避難経路が見つかりませんでした。 ---")
-            folium.Marker(location=current_location, popup="現在地: 危険区域内（経路なし）", icon=folium.Icon(color="red", icon="info-sign")).add_to(fmap)
+            folium.Marker(location=current_location, popup="現在地: 危険区域内（経路なし）", icon=icon_start).add_to(fmap)
 
         # **追加要件: 最短経路以外の安全な避難所へのルートも表示**
         # ただし、メインの経路の避難所と同じ場所への経路は除外
@@ -331,7 +334,7 @@ def main():
         if valid_shelters.empty:
             print(f"⚠️ 半径 {radius_km}km 以内に有効な避難所が見つかりませんでした。")
             # 危険区域外なので、経路探索は不要。避難所なしの表示で終了
-            folium.Marker(location=current_location, popup="現在地: 安全です（避難所なし）", icon=folium.Icon(color="red", icon="info-sign")).add_to(fmap)
+            folium.Marker(location=current_location, popup="現在地: 安全です（避難所なし）", icon=icon_start).add_to(fmap)
             fmap.save("../templates/safe_route_with_dosya.html")
             print("✅ 地図を保存しました：safe_route_with_dosya.html")
             return # ここで処理を終了
@@ -345,7 +348,7 @@ def main():
             marker_color = "red" if hazard_gdf.contains(shelter_point).any() else "green"
             folium.Marker(
                 location=(row["緯度"], row["経度"]),
-                popup=f"避難所: {row.get('名称', '名称不明')}",
+                popup=f"避難所: {row.get('施設・場所名')}",
                 icon=folium.Icon(color=marker_color, icon="home")
             ).add_to(fmap)
 
